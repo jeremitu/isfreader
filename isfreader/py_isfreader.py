@@ -8,6 +8,7 @@
     :author: Jengel
 """
 import numpy as np
+import warnings
 
 __all__ = ['read_file', 'split_isf_header', 'parse_isf_header', 'parse_isf_data']
 
@@ -163,9 +164,14 @@ def parse_isf_header(header_text):
                 header[key] = HEADER_DISPATCHER[key](val)
     # end
 
-    # Check for header values
+    # Check for header values. Some values can be missing eg. in Math mode.
     if None in header.values():
-        raise InvalidFileError('Header field missing from ISF file.')
+        # Get the key of the missing value
+        index = list(header.values()).index(None)
+        field = list(header.keys())[index]
+        msg = f'Header field #{field} missing in ISF file.'
+        #raise InvalidFileError(msg)
+        warnings.warn(msg, RuntimeWarning)
 
     return header
 
