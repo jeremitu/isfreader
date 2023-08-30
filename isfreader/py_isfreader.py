@@ -165,11 +165,10 @@ def parse_isf_header(header_text):
     # end
 
     # Check for header values. Some values can be missing eg. in Math mode.
-    if None in header.values():
-        # Get the key of the missing value
-        index = list(header.values()).index(None)
-        field = list(header.keys())[index]
-        msg = f'Header field #{field} missing in ISF file.'
+    if False and None in header.values():
+        # Get the keys of the missing values
+        fields = [key for key, val in header.items() if val == None]
+        msg = f'Header field(s) {", ".join(fields)} missing in ISF file.'
         #raise InvalidFileError(msg)
         warnings.warn(msg, RuntimeWarning)
 
