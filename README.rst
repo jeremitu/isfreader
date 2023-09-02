@@ -2,8 +2,16 @@
 ISF Reader
 **********
 
-Read tek scope isf files as a numpy array.
+Read Tek scope ISF files as a numpy array.
 
+Installation
+============
+.. code-block:: bash
+
+    pip install git+https://github.com/jeremitu/isfreader.git
+
+Usage:
+======
 .. code-block:: python
 
     import isfreader
@@ -13,3 +21,9 @@ Read tek scope isf files as a numpy array.
     data[:, 1]  # Data (Voltage) column
     print(data.shape)
     print(data.dtype)
+
+    data, header = isfreader.read_file_with_header('data1.isf')
+    print(header) # dictionary of header values
+
+    data = isfreader.get_isf_file(ip)
+    ...

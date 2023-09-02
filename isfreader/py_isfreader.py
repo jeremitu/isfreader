@@ -1,8 +1,7 @@
 """
     ISF Reader - Items for reading and parsing ISF files.
 
-    The purpose of this file is to read in time/value data. This file can read this data from csv
-    files or isf files.
+    The purpose of this file is to read in time/value data. Only isf files are supported.
 
     SeaLandAire Technologies
     :author: Jengel
@@ -10,7 +9,8 @@
 import numpy as np
 import warnings
 
-__all__ = ['read_file', 'split_isf_header', 'parse_isf_header', 'parse_isf_data']
+__all__ = ['read_file', 'split_isf_header', 'parse_isf_header', 'parse_isf_data',
+           'get_isf_data']
 
 
 # Header Parsers
@@ -175,11 +175,15 @@ def parse_isf_header(header_text):
     return header
 
 
-def parse_isf_data(data):
-    """Parse isf data to x and y data.
+def parse_isf_data(data, with_header = False):
+    """Parse isf data to x and y data and header.
 
     Args:
         data (str/bytes): Data to parse.
+        with_header (bool, opt): Return the header with the data.
+    Returns:
+        data (numpy.array): data with X and Y in columns.
+        header (dict): Dictionary of header items.
     """
     # Separate header from data
     if isinstance(data, str):
@@ -204,19 +208,56 @@ def parse_isf_data(data):
     xdata = ((np.arange(num_rows) - pt_off) * xincr + xzero)
     ydata = ((data - yoff) * ymult) + yzero
 
-    return np.array((xdata, ydata)).T
+    array = np.array((xdata, ydata)).T
+    if with_header:
+        return array, header
+    else:
+        return array
 
 
-def read_file(filename):
+def read_file(filename, with_header = False):
     """Read the given filename.
 
     Args:
         filename (str): The filename you want to load.
+        with_header (bool, opt): Return the header with the data.
 
     Returns:
         data (numpy.array): Loaded data.
     """
     with open(filename, 'rb') as file:
-        byts = file.read()
+        bytes = file.read()
 
-    return parse_isf_data(byts)
+    return parse_isf_data(bytes, with_header)
+
+
+def get_isf_data(ip, **kwargs):
+    """Get the ISF file from the instrument via a HTTP request.
+
+    Args:
+        ip (str): The IP address of the instrument.
+
+    Optional Args:
+        filename (str): The filename you want to write.
+        format (str): file format, internal (default), spreadsheet, mathcad
+        channel (str): channel, default 'ch1'. E.g. ch1,ch2,math,ref1,ref2,ref3,ref4
+            (check what yours has, using a browser, from the list on the scopes webpage)
+        with_header (bool): Return the header with the data.
+
+    Returns:
+        data (numpy.array): Loaded data.
+        header (dict, optional): Dictionary of header items.
+    """
+    import requests
+    url = f"http://{ip}/getwfm.isf"
+    channel = kwargs.get('channel', 'ch1')
+    format = kwargs.get('format', 'internal')
+    payload = {'command': (f"select:{channel} on", f"save:waveform:fileformat{format}"), 'wfmsend': 'Get'}
+    response = requests.get(url, params = payload, timeout=3)
+    #print(response.url)
+    bytes = response.content
+    filename = kwargs.get('filename', None)
+    if filename:
+        with open(filename, 'w+b') as file:
+            file.write(bytes)
+    return parse_isf_data(bytes, kwargs.get('with_header', False))
