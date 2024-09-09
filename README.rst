@@ -22,7 +22,7 @@ Usage:
     print(data.shape)
     print(data.dtype)
 
-    data, header = isfreader.read_file_with_header('data1.isf')
+    data, header = isfreader.read_file(filename,with_header=True)
     print(header) # dictionary of header values
 
     data = isfreader.get_isf_file(ip)
